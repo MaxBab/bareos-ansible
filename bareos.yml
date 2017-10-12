@@ -1,0 +1,15 @@
+- name: Bareos database
+  hosts: director
+  roles:
+    - role: bareos-database
+
+- name: Bareos director
+  hosts: director
+  roles:
+    - role: bareos-director
+    - role: bareos-webui
+
+- name: Bareos clients
+  hosts: clients
+  roles:
+    - role: bareos-client

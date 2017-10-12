@@ -1,0 +1,26 @@
+---
+
+- name: Install Bareos client
+  package:
+    name: bareos-client
+    state: present
+
+- name: Start and enable Bareos client service
+  service:
+    name: "bareos-fd"
+    enabled: yes
+    state: started
+
+- name: Configure clients
+  template:
+    src: client-bareos-dir.conf.j2
+    dest: /etc/bareos/bareos-fd.d/director/bareos-dir.conf
+  notify: Restart Bareos-fd service
+
+- name: Configure clients on Director
+  template:
+    src: client-fd.conf.j2
+    dest: /etc/bareos/bareos-dir.d/client/{{ ansible_hostname }}-fd.conf
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['director'][0] }}"
+  notify: Restart Bareos-dir service

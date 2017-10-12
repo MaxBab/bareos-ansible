@@ -1,0 +1,26 @@
+---
+
+- name: Install Bareos client
+  package:
+    name: bareos-client
+    state: present
+
+- name: Start and enable Bareos client service
+  service:
+    name: "bareos-fd"
+    enabled: yes
+    state: started
+
+- name: Modify default director client
+  lineinfile:
+    path: /etc/bareos/bareos-dir.d/client/bareos-fd.conf
+    regexp: '^(.*)Password(.*)$'
+    line: '  Password = {{ client_password }}'
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['director'][0] }}"
+
+- name: Configure clients
+  template:
+    src: client-bareos-dir.conf.j2
+    dest: /etc/bareos/bareos-fd.d/director/bareos-dir.conf
+  notify: Restart Bareos-fd service

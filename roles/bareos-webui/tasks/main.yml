@@ -1,0 +1,34 @@
+---
+
+- name: Install WebUI package
+  package:
+    name: bareos-webui
+    state: present
+  notify:
+    - Restart Apache "{{ ansible_os_family }}"
+
+- meta: flush_handlers
+
+- name: Create WebUI admin user
+  template:
+    src: webui-admin.conf.j2
+    dest: /etc/bareos/bareos-dir.d/console/admin.conf
+    owner: bareos
+    group: bareos
+    mode: 0640
+
+- block:
+    - name: Install Selinux management package
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - libselinux-python
+        - libsemanage-python
+
+    - name: Set Selinux config
+      seboolean:
+        name: httpd_can_network_connect
+        state: yes
+        persistent: yes
+  when: ansible_os_family == 'RedHat' and ansible_selinux != false and ansible_selinux.status != 'disabled'
