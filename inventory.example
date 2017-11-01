@@ -1,0 +1,6 @@
+# Director group should hold one single server
+[director]
+bareos-server-name
+
+[clients]
+client-server-name

@@ -1,0 +1,13 @@
+---
+
+- name: Restart Apache "RedHat"
+  service:
+    name: httpd
+    enabled: yes
+    state: restarted
+
+- name: Restart Apache "Debian"
+  service:
+    name: apache2
+    enabled: yes
+    state: restarted

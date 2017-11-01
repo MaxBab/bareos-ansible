@@ -1,0 +1,13 @@
+---
+
+mariadb_packages:
+  - MariaDB-server
+  - MariaDB-client
+  - MariaDB-common
+  - MariaDB-devel
+  - MariaDB-compat
+  - MySQL-python
+
+postgres_packages:
+  - postgresql-server
+  - postgresql-contrib

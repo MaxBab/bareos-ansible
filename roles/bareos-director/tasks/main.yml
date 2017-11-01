@@ -1,0 +1,63 @@
+---
+
+- name: Install Bareos
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - "bareos"
+    - "bareos-database-{% if database == 'mariadb' %}mysql{% else %}postgresql{% endif %}"
+  register: bareos_install
+
+- name: Ensure proper database catalog connection
+  replace:
+    path: /etc/bareos/bareos-dir.d/catalog/MyCatalog.conf
+    regexp: 'dbdriver.*'
+    replace: "dbdriver = {% if database == 'mariadb' %}mysql{% else %}postgresql{% endif %}"
+
+- name: Prepare database for MariaDB
+  command: "{{ item }} mysql --user=root --password='{{ mariadb_root_password }}'"
+  no_log: true
+  with_items:
+    - '/usr/lib/bareos/scripts/create_bareos_database'
+    - '/usr/lib/bareos/scripts/make_bareos_tables'
+    - '/usr/lib/bareos/scripts/grant_bareos_privileges'
+  when: bareos_install|changed and database == 'mariadb'
+
+- block:
+    - name: Install psycopg2 package for Postgresql management
+      package:
+        name: python-psycopg2
+        state: present
+
+    # On Ubuntu, during Bareos install, 'bareos' db created
+    # while using postgresql db. This cause db prepare scripts
+    # to fail. Because of this, removing the db before script exec.
+    - name: Remove bareos database
+      postgresql_db:
+        name: bareos
+        state: absent
+      become: true
+      become_user: postgres
+
+    - name: Prepare database for Postgresql
+      command: "{{ item }} postgresql"
+      with_items:
+        - '/usr/lib/bareos/scripts/create_bareos_database'
+        - '/usr/lib/bareos/scripts/make_bareos_tables'
+        - '/usr/lib/bareos/scripts/grant_bareos_privileges'
+      become: true
+      become_user: postgres
+  when: bareos_install|changed and database == 'postgresql'
+
+- name: Start and enable Bareos services
+  service:
+    name: "bareos-{{ item }}"
+    enabled: yes
+    state: started
+  with_items:
+    - dir
+    - sd
+
+- name: Configure client on Bareos director
+  include: bareos-client.yml

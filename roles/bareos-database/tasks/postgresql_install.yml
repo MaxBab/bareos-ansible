@@ -1,0 +1,34 @@
+---
+
+# APT module does not updating the cache by default and since
+# package module used instead, the cache should be updated previously.
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Install Postgres
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items: '{{ postgres_packages }}'
+  register: bareos_install
+
+- name: Init new Postgresql db cluster on RHEL/CentOS 7
+  command: /usr/bin/postgresql-setup initdb
+  when:
+    - bareos_install|changed
+    - ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'
+
+- name: Init new Postgresql db cluster on RHEL/CentOS 6
+  command: service postgresql initdb
+  when:
+    - bareos_install|changed
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution_major_version == '6'
+
+- name: Start and enable Postgresql service
+  service:
+    name: postgresql
+    enabled: yes
+    state: started

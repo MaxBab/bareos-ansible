@@ -1,0 +1,6 @@
+---
+
+- name: Restart Bareos-fd service
+  service:
+    name: bareos-fd
+    state: restarted

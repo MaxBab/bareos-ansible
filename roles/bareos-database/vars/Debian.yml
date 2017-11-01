@@ -1,0 +1,9 @@
+---
+
+mariadb_packages:
+  - mariadb-server
+  - python-mysqldb
+
+postgres_packages:
+  - postgresql
+  - postgresql-contrib

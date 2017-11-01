@@ -1,0 +1,13 @@
+---
+
+- name: Restart Bareos-dir service
+  service:
+    name: bareos-dir
+    state: restarted
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['director'][0] }}"
+
+- name: Restart Bareos-fd service
+  service:
+    name: bareos-fd
+    state: restarted

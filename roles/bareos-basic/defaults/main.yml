@@ -1,0 +1,29 @@
+---
+
+################################################################
+### Database section                                         ###
+### Choose the database and version that should be installed ###
+### Supported databases: mariadb, postgres                   ###
+################################################################
+database: postgresql
+
+#database: mariadb
+#db_version: 10.1
+
+##################################################
+### Bareos database section ######################
+##################################################
+mariadb_root_password: "P@ssw0rd!"                      # This is an example password. Change it.
+mariadb_login_host: localhost
+
+##################################################
+### Bareos version ###############################
+### Choose the version of bareos if needed #######
+### Latest will be used by default ###############
+##################################################
+#bareos_version:
+
+webui_admin_user: admin
+webui_admin_pass: "P@ssw0rd!"                           # This is an example password. Change it.
+
+client_password: "P@ssw0rd!"                            # This is an example password. Change it.

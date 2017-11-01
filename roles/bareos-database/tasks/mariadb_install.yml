@@ -1,0 +1,76 @@
+---
+
+- name: Upload MariaDB repo file for RedHat/CentOS distribution
+  yum_repository:
+    name: mariadb
+    description: 'MariaDB repository'
+    baseurl: http://yum.mariadb.org/{{ db_version }}/{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-amd64
+    enabled: yes
+    gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+    gpgcheck: yes
+  when: ansible_os_family == 'RedHat'
+
+- block:
+    - name: Add a key for MariaDB install for Debian/Ubuntu distribution
+      apt_key:
+        keyserver: 'keyserver.ubuntu.com'
+        id: '0xcbcb082a1bb943db'
+
+    - name: Set MariaDB repo for Debian/Ubuntu distribution
+      apt_repository:
+        repo: "{{ item }}"
+        filename: mariadb
+        state: present
+      with_items:
+        - 'deb http://lon1.mirrors.digitalocean.com/mariadb/repo/{{ db_version }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main'
+        - 'deb-src http://lon1.mirrors.digitalocean.com/mariadb/repo/{{ db_version }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main'
+  when: ansible_os_family == 'Debian'
+
+- name: Install MariaDB
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items: '{{ mariadb_packages }}'
+
+- name: Start MariaDB service and enable on boot
+  service:
+    name: mysql
+    enabled: yes
+    state: started
+
+- name: Delete anonymous MariaDB server user
+  mysql_user:
+    user: ""
+    host: "{{ ansible_hostname }}"
+    state: "absent"
+  ignore_errors: yes
+
+- name: Delete anonymous MariaDB server user for localhost
+  mysql_user:
+    user: ""
+    state: "absent"
+  ignore_errors: yes
+
+- name: Remove the MariaDB test database
+  mysql_db:
+    db: test
+    state: absent
+  ignore_errors: yes
+
+# 'localhost' needs to be the last item for idempotency, see
+# http://ansible.cc/docs/modules.html#mysql-user
+- name: Change root user password on first run
+  mysql_user:
+    login_user: root
+    login_password: ''
+    name: root
+    password: "{{ mariadb_root_password }}"
+    priv: '*.*:ALL,GRANT'
+    host: "{{ item }}"
+  with_items:
+    - "{{ ansible_hostname }}"
+    - 127.0.0.1
+    - ::1
+    - localhost
+  ignore_errors: yes
+  no_log: true
